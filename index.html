@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear-xui-Database | SQLite Web Editor</title>
+    <!-- افزودن فونت وزیر متن -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <!-- اضافه کردن استایل‌ها -->
+    <style>
+        :root {
+            --primary-color: #4a6cf7;
+            --primary-dark: #3b5de7;
+            --secondary-color: #6c757d;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --background-color: #f0f5ff;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-radius: 8px;
+            --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            background-image: linear-gradient(135deg, #f0f5ff 0%, #e6eeff 100%);
+            color: var(--text-color);
+            direction: rtl;
+            text-align: right;
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 40px;
+            width: 100%;
+            max-width: 550px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            color: var(--primary-dark);
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .app-icon {
+            margin: 0 auto 20px;
+            width: 80px;
+            height: 80px;
+            background-color: var(--primary-color);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .custom-file-input {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .custom-file-input label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px;
+            background-color: #f6f9ff;
+            border: 2px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .custom-file-input label:hover {
+            background-color: #edf2ff;
+            border-color: var(--primary-dark);
+        }
+
+        .custom-file-input label svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--primary-color);
+        }
+
+        .custom-file-input input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.95rem;
+            color: var(--secondary-color);
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(74, 108, 247, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 6px 8px rgba(74, 108, 247, 0.3);
+            transform: translateY(-2px);
+        }
+
+        #status {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: rgba(16, 185, 129, 0.1);
+            border-right: 3px solid var(--success-color);
+            display: none;
+            font-weight: 500;
+        }
+
+        #status.error {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-right-color: var(--danger-color);
+        }
+
+        #status.active {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #status.active::before {
+            content: '';
+            display: block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+        }
+
+        #status.error::before {
+            background-color: var(--danger-color);
+        }
+
+        /* پویانمایی در هنگام پردازش */
+        .processing {
+            position: relative;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .processing::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Responsive styles */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+                width: 95%;
+            }
+            
+            h2 {
+                font-size: 1.6rem;
+                margin-bottom: 20px;
+            }
+            
+            .custom-file-input label {
+                padding: 14px;
+            }
+            
+            button {
+                padding: 14px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        </div>
+        <h2>ویرایشگر دیتابیس SQLite <br><sub>3x-ui / x-ui</sub></h2>
+        <div class="file-upload">
+            <div class="custom-file-input">
+                <label for="uploadFile">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                    انتخاب فایل دیتابیس
+                </label>
+                <input type="file" id="uploadFile" accept=".sqlite,.db,.sqlite3">
+            </div>
+            <div class="file-name" id="fileName">هنوز فایلی انتخاب نشده است</div>
+        </div>
+        <button onclick="processDatabase()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-2 16c-2.05 0-3.81-1.24-4.58-3h1.71c.63.9 1.68 1.5 2.87 1.5 1.93 0 3.5-1.57 3.5-3.5S13.93 9.5 12 9.5c-1.35 0-2.52.78-3.1 1.9l1.6 1.6h-4V9l1.3 1.3C8.69 8.92 10.23 8 12 8c2.76 0 5 2.24 5 5s-2.24 5-5 5z"/></svg>
+            بررسی و اصلاح دیتابیس
+        </button>
+        <p id="status"></p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+        // اضافه کردن کد جاوااسکریپت برای نمایش نام فایل
+        document.getElementById('uploadFile').addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'هنوز فایلی انتخاب نشده است';
+            document.getElementById('fileName').textContent = fileName;
+        });
+
+        async function processDatabase() {
+            const fileInput = document.getElementById("uploadFile");
+            const statusText = document.getElementById("status");
+            const processButton = document.querySelector("button");
+            
+            // نمایش و اصلاح کلاس وضعیت
+            statusText.className = '';
+            statusText.classList.add('active');
+
+            if (fileInput.files.length === 0) {
+                statusText.innerText = "لطفاً یک فایل دیتابیس انتخاب کنید.";
+                statusText.classList.add('error');
+                return;
+            }
+
+            // اضافه کردن کلاس در حال پردازش
+            processButton.classList.add('processing');
+            processButton.disabled = true;
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function (event) {
+                try {
+                    const data = new Uint8Array(event.target.result);
+
+                    // بارگذاری sql.js
+                    const SQL = await initSqlJs({ locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}` });
+                    const db = new SQL.Database(data);
+
+                    // بررسی وجود جدول settings
+                    const tableCheck = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='settings';");
+                    if (tableCheck.length === 0) {
+                        statusText.innerText = "دیتابیس نامعتبر است. جدول settings یافت نشد.";
+                        statusText.classList.add('error');
+                        processButton.classList.remove('processing');
+                        processButton.disabled = false;
+                        return;
+                    }
+
+                    // اصلاح دیتابیس: تنظیم مقدار value روی رشته خالی برای کلیدهای موردنظر
+                    const keysToUpdate = ["webCertFile", "webKeyFile", "webDomain", "webListen"];
+                    keysToUpdate.forEach(key => {
+                        db.run("UPDATE settings SET value='' WHERE key=?;", [key]);
+                    });
+
+                    // دریافت پسوند فایل اصلی
+                    const fileExt = file.name.split('.').pop();
+
+                    // ایجاد نام فایل با تاریخ و زمان
+                    const now = new Date();
+                    const formattedDate = now.getFullYear().toString() + 
+                                         String(now.getMonth() + 1).padStart(2, '0') + 
+                                         String(now.getDate()).padStart(2, '0') + "_" + 
+                                         String(now.getHours()).padStart(2, '0') + 
+                                         String(now.getMinutes()).padStart(2, '0') + 
+                                         String(now.getSeconds()).padStart(2, '0');
+
+                    const newFileName = `${formattedDate}.${fileExt}`;
+
+                    // ایجاد دیتابیس اصلاح‌شده برای دانلود
+                    const modifiedData = db.export();
+                    const blob = new Blob([modifiedData], { type: "application/octet-stream" });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = newFileName;
+                    a.click();
+
+                    statusText.innerText = `عملیات موفقیت‌آمیز بود. فایل اصلاح‌شده (${newFileName}) دانلود شد!`;
+                } catch (error) {
+                    statusText.innerText = "خطا در پردازش دیتابیس: " + error.message;
+                    statusText.classList.add('error');
+                } finally {
+                    // حذف کلاس در حال پردازش
+                    processButton.classList.remove('processing');
+                    processButton.disabled = false;
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
