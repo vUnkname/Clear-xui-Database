@@ -31,8 +31,8 @@ $file_path = $file_info["result"]["file_path"];
 $file_url = "https://api.telegram.org/file/bot$BOT_TOKEN/$file_path";
 $file_name = basename($file_path);
 $file_ext = pathinfo($file_name, PATHINFO_EXTENSION);
-$local_file = "uploads/original_$file_name";
-$modified_file = "uploads/" . date("Ymd_His") . ".$file_ext";
+$local_file = sys_get_temp_dir() . "/original_$file_name"; // ذخیره در مسیر موقت سیستم
+$modified_file = sys_get_temp_dir() . "/" . date("Ymd_His") . ".$file_ext";
 
 file_put_contents($local_file, file_get_contents($file_url));
 
@@ -44,6 +44,7 @@ try {
     $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='settings';");
     if (!$stmt->fetch()) {
         sendMessage($chat_id, "دیتابیس نامعتبر است. جدول 'settings' یافت نشد.");
+        unlink($local_file); // حذف فایل اصلی
         exit;
     }
 
@@ -59,8 +60,13 @@ try {
 
     // ارسال فایل اصلاح‌شده به کاربر
     sendDocument($chat_id, $modified_file);
+
+    // حذف فایل‌های موقت
+    unlink($local_file);
+    unlink($modified_file);
 } catch (Exception $e) {
     sendMessage($chat_id, "خطا در پردازش دیتابیس: " . $e->getMessage());
+    unlink($local_file); // حذف فایل اصلی در صورت خطا
 }
 
 // توابع کمکی
